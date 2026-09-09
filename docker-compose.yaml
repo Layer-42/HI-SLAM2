@@ -1,0 +1,26 @@
+services:
+  hislam2:
+    build: .
+    image: hislam2
+    working_dir: /workspace/HI-SLAM2
+
+    stdin_open: true
+    tty: true
+
+    environment:
+      HISTFILE: /root/.bash_history
+      HISTSIZE: 10000
+      HISTFILESIZE: 20000
+
+    volumes:
+      - ${HISLAM2_DATA_DIR}:/workspace/HI-SLAM2/data
+      - ${HISLAM2_OUTPUT_DIR}:/workspace/HI-SLAM2/outputs
+      - ./.docker/bash_history:/root/.bash_history
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
