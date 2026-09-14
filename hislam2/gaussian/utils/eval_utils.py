@@ -76,9 +76,9 @@ def eval_rendering(
     output["mean_psnr"] = float(np.mean(psnr_array))
     output["mean_ssim"] = float(np.mean(ssim_array))
     output["mean_lpips"] = float(np.mean(lpips_array))
-    output["mean_l1"] = float(np.mean(l1_array)) if l1_array else 0
+    output["mean_depthl1"] = float(np.mean(l1_array)) if l1_array else 0
 
-    Log(f'mean psnr: {output["mean_psnr"]}, ssim: {output["mean_ssim"]}, lpips: {output["mean_lpips"]}, depth l1: {output["mean_l1"]}', tag="Eval")
+    Log(f'mean psnr: {output["mean_psnr"]}, ssim: {output["mean_ssim"]}, lpips: {output["mean_lpips"]}, depth l1: {output["mean_depthl1"]}', tag="Eval")
 
     psnr_save_dir = os.path.join(save_dir, "psnr", str(iteration))
     os.makedirs(psnr_save_dir, exist_ok=True)

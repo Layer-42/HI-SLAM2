@@ -9,10 +9,13 @@ echo "Installing HI-SLAM2"
 nvcc --version
 gcc --version | head -n 1
 python --version
+colmap -h >/dev/null
 
 git config --global --add safe.directory '*'
-git submodule sync --recursive
-git submodule update --init --recursive
+if [ -d "${ROOT_DIR}/.git" ]; then
+    git submodule sync --recursive || true
+    git submodule update --init --recursive || true
+fi
 
 echo "Installing PyTorch"
 
@@ -57,53 +60,27 @@ python -m pip install \
     torch-scatter \
     -f https://data.pyg.org/whl/torch-2.1.2+cu118.html
 
-python -m pip install \
-    --no-build-isolation \
-    ./thirdparty/simple-knn
+TMP_DIR="$(mktemp -d)"
+
+cp -a thirdparty/simple-knn \
+    "${TMP_DIR}/simple-knn"
 
 python -m pip install \
     --no-build-isolation \
-    ./thirdparty/diff-gaussian-rasterization
+    "${TMP_DIR}/simple-knn"
+
+cp -a thirdparty/diff-gaussian-rasterization \
+    "${TMP_DIR}/diff-gaussian-rasterization"
+
+python -m pip install \
+    --no-build-isolation \
+    "${TMP_DIR}/diff-gaussian-rasterization"
+
+rm -rf "${TMP_DIR}"
 
 echo "Building HI-SLAM2"
 
 python setup.py install
-
-echo "Downloading pretrained models"
-
-mkdir -p pretrained_models
-
-download_model() {
-    local filename="$1"
-    local output="pretrained_models/${filename}"
-    local tmp="${output}.part"
-
-    if [ -s "${output}" ]; then
-        echo "${filename} already exists"
-        return
-    fi
-
-    rm -f "${tmp}"
-
-    if wget \
-        --tries=3 \
-        --timeout=30 \
-        "https://zenodo.org/records/10447888/files/${filename}" \
-        -O "${tmp}"; then
-        mv "${tmp}" "${output}"
-        return
-    fi
-
-    rm -f "${tmp}"
-
-    hf download \
-        clay3d/omnidata \
-        "${filename}" \
-        --local-dir pretrained_models
-}
-
-download_model "omnidata_dpt_normal_v2.ckpt"
-download_model "omnidata_dpt_depth_v2.ckpt"
 
 echo "Checking installation"
 

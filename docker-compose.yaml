@@ -1,21 +1,38 @@
 services:
   hislam2:
-    build: .
+    build:
+      context: .
+      args:
+        COLMAP_VERSION: ${COLMAP_VERSION:-3.8}
+        CUDA_ARCHITECTURES: ${CUDA_ARCHITECTURES:-75;80;86;89}
+
     image: hislam2
+
     working_dir: /workspace/HI-SLAM2
 
     stdin_open: true
     tty: true
 
+    # shared memory 8, 16 gb
+    shm_size: "24gb"
+
     environment:
-      HISTFILE: /root/.bash_history
-      HISTSIZE: 10000
-      HISTFILESIZE: 20000
+      DISPLAY: ${DISPLAY} # Display variable for X11 forwarding
+      XAUTHORITY: /root/.Xauthority
+      QT_X11_NO_MITSHM: "1"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics,display
+      HF_HOME: /root/.cache/huggingface
+      TORCH_HOME: /root/.cache/torch
 
     volumes:
-      - ${HISLAM2_DATA_DIR}:/workspace/HI-SLAM2/data
-      - ${HISLAM2_OUTPUT_DIR}:/workspace/HI-SLAM2/outputs
-      - ./.docker/bash_history:/root/.bash_history
+      - .:/workspace/HI-SLAM2
+      - ${SLAM_DATA_DIR:-./data}:/workspace/HI-SLAM2/data
+      - ${SLAM_OUTPUT_DIR:-./outputs}:/workspace/HI-SLAM2/outputs
+      - ${SLAM_PRETRAINED_DIR:-./pretrained_models}:/workspace/HI-SLAM2/pretrained_models
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority:ro
+      - hislam2_hf_cache:/root/.cache/huggingface
+      - hislam2_torch_cache:/root/.cache/torch
 
     deploy:
       resources:
@@ -24,3 +41,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
+volumes:
+  hislam2_hf_cache: # HF cache volume
+  hislam2_torch_cache: # Torch cache volume

@@ -132,7 +132,7 @@ class GSBackEnd(mp.Process):
 
     def finalize(self):
         self.color_refinement(iteration_total=self.gaussians.max_steps)
-        self.gaussians.save_ply(f'{self.save_dir}/3dgs_final.ply')
+        self.gaussians.save_ply(f'{self.save_dir}/final_gs.ply')
 
         poses_cw = []
         for view in self.viewpoints.values():

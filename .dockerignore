@@ -1,0 +1,9 @@
+.git
+.env
+data/
+outputs/
+pretrained_models/
+**/__pycache__
+**/build
+**/*.egg-info
+*.so
