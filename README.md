@@ -85,6 +85,31 @@ wget https://zenodo.org/records/10447888/files/omnidata_dpt_normal_v2.ckpt -P pr
 wget https://zenodo.org/records/10447888/files/omnidata_dpt_depth_v2.ckpt -P pretrained_models
 ```
 
+### Docker Installation
+
+```bash
+git clone --recursive https://github.com/Layer-42/HI-SLAM2.git
+cd HI-SLAM2
+
+cp .env.example .env
+docker compose build
+docker compose run --rm hislam2
+```
+
+Download the pretrained models from inside the container:
+
+```bash
+bash scripts/download_models.sh
+```
+
+Edit .env if needed:
+
+```bash
+SLAM_DATA_DIR=./data
+SLAM_OUTPUT_DIR=./outputs
+SLAM_PRETRAINED_DIR=./pretrained_models
+```
+
 ## Data Preparation
 ### Replica
 Download and prepare the Replica dataset by running

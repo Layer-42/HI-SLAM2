@@ -9,15 +9,16 @@ OUTPUT_DIR="outputs"
 python scripts/preprocess_owndata.py \
   "${VIDEO}" \
   "${DATA_DIR}" \
-  0.5 \
-  800
+  1 \
+  584
 
 
 # Demo
 python demo.py \
   --imagedir "${DATA_DIR}/images" \
   --calib "${DATA_DIR}/calib.txt" \
-  --config config/owndata_config.yaml \
+  --config config/waldek_performance.yaml \
   --output "${OUTPUT_DIR}" \
-  --undistort \
-  --gsvis
+  --scene waldek_data \
+  --buffer 400 \
+  --undistort
