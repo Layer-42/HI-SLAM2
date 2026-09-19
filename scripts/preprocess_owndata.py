@@ -80,13 +80,13 @@ def run_colmap(output):
     os.system(
         f"{colmap_binary} sequential_matcher --SiftMatching.guided_matching=true --database_path {db}")
 
-    os.system(f"mkdir {output}/sparse")
+    os.makedirs(f"{output}/sparse", exist_ok=True)
     os.system(
         f"{colmap_binary} mapper --database_path {db} --image_path {images} --output_path {output}/sparse")
 
     os.system(f"{colmap_binary} bundle_adjuster --input_path {output}/sparse/0 --output_path {output}/sparse/0 --BundleAdjustment.refine_principal_point 1")
 
-    os.system(f"mkdir {output}/sparse_txt")
+    os.makedirs(f"{output}/sparse_txt", exist_ok=True)
     os.system(f"{colmap_binary} model_converter --input_path {output}/sparse/0 --output_path {output}/sparse_txt --output_type TXT")
 
 

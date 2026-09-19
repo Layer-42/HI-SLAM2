@@ -5,34 +5,41 @@ services:
       args:
         COLMAP_VERSION: ${COLMAP_VERSION:-3.8}
         CUDA_ARCHITECTURES: ${CUDA_ARCHITECTURES:-75;80;86;89}
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
 
     image: hislam2
 
     working_dir: /workspace/HI-SLAM2
+    user: "${UID:-1000}:${GID:-1000}"
+    group_add:
+      - video
 
     stdin_open: true
     tty: true
 
-    # shared memory 8, 16 gb
-    shm_size: "24gb"
+    shm_size: "16gb"
+    mem_limit: 48g
+    pids_limit: 4096
 
     environment:
+      HOME: /home/hislam2
       DISPLAY: ${DISPLAY} # Display variable for X11 forwarding
-      XAUTHORITY: /root/.Xauthority
+      XAUTHORITY: /home/hislam2/.Xauthority
       QT_X11_NO_MITSHM: "1"
       NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics,display
-      HF_HOME: /root/.cache/huggingface
-      TORCH_HOME: /root/.cache/torch
+      HF_HOME: /home/hislam2/.cache/huggingface
+      TORCH_HOME: /home/hislam2/.cache/torch
+      XDG_CACHE_HOME: /home/hislam2/.cache
 
     volumes:
       - .:/workspace/HI-SLAM2
-      - ${SLAM_DATA_DIR:-./data}:/workspace/HI-SLAM2/data
-      - ${SLAM_OUTPUT_DIR:-./outputs}:/workspace/HI-SLAM2/outputs
+      - ${SLAM_DATA_DIR:-./data}:/workspace/HI-SLAM2/data:rw
       - ${SLAM_PRETRAINED_DIR:-./pretrained_models}:/workspace/HI-SLAM2/pretrained_models
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${XAUTHORITY:-$HOME/.Xauthority}:/root/.Xauthority:ro
-      - hislam2_hf_cache:/root/.cache/huggingface
-      - hislam2_torch_cache:/root/.cache/torch
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/home/hislam2/.Xauthority:ro
+      - hislam2_hf_cache:/home/hislam2/.cache/huggingface
+      - hislam2_torch_cache:/home/hislam2/.cache/torch
 
     deploy:
       resources:

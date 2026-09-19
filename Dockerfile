@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     libgl1 \
     libegl1 \
+    libusb-1.0-0 \
     libglib2.0-0 \
     libx11-6 \
     libxext6 \
@@ -57,30 +58,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git clone \
-      --branch "${COLMAP_VERSION}" \
-      --depth 1 \
-      https://github.com/colmap/colmap.git \
-      /tmp/colmap && \
+    --branch "${COLMAP_VERSION}" \
+    --depth 1 \
+    https://github.com/colmap/colmap.git \
+    /tmp/colmap && \
     CC=/usr/bin/gcc-10 \
     CXX=/usr/bin/g++-10 \
     CUDAHOSTCXX=/usr/bin/g++-10 \
     cmake \
-      -S /tmp/colmap \
-      -B /tmp/colmap/build \
-      -GNinja \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" \
-      -DCUDA_ENABLED=ON && \
+    -S /tmp/colmap \
+    -B /tmp/colmap/build \
+    -GNinja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" \
+    -DCUDA_ENABLED=ON && \
     cmake --build /tmp/colmap/build --parallel && \
     cmake --install /tmp/colmap/build && \
     rm -rf /tmp/colmap
 
 RUN update-alternatives \
-      --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 && \
+    --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 && \
     update-alternatives \
-      --install /usr/bin/g++ g++ /usr/bin/g++-11 100 && \
+    --install /usr/bin/g++ g++ /usr/bin/g++-11 100 && \
     update-alternatives \
-      --install /usr/bin/python python /usr/bin/python3 100
+    --install /usr/bin/python python /usr/bin/python3 100
 
 RUN python -m pip install --upgrade \
     pip \
@@ -91,6 +92,97 @@ WORKDIR /workspace/HI-SLAM2
 
 COPY . .
 
-RUN bash scripts/install.sh
+RUN python -m pip install \
+    torch==2.1.2 \
+    torchvision==0.16.2 \
+    torchaudio==2.1.2 \
+    --index-url https://download.pytorch.org/whl/cu118
+
+RUN python -m pip install \
+    numpy==1.26.4 \
+    setuptools==69.5.1 \
+    scipy \
+    opencv-python \
+    tqdm \
+    matplotlib \
+    pyyaml \
+    lightning \
+    wheel \
+    torchmetrics \
+    pyrender \
+    imgviz \
+    timm \
+    open3d \
+    evo \
+    munch \
+    plyfile \
+    rich \
+    glfw \
+    PyGLM \
+    huggingface_hub
+
+RUN python -m pip install \
+    git+https://github.com/eriksandstroem/evaluate_3d_reconstruction_lib.git
+
+RUN python -m pip install \
+    --no-build-isolation \
+    torch-scatter \
+    -f https://data.pyg.org/whl/torch-2.1.2+cu118.html
+
+RUN python -m pip install \
+    --no-build-isolation \
+    ./thirdparty/simple-knn
+
+RUN python -m pip install \
+    --no-build-isolation \
+    ./thirdparty/diff-gaussian-rasterization
+
+RUN python setup.py install
+
+RUN python - <<'PY'
+import torch
+import torch_scatter
+import simple_knn
+import diff_gaussian_rasterization
+import droid_backends
+import lietorch
+
+print("PyTorch:", torch.__version__)
+print("CUDA:", torch.version.cuda)
+print("torch-scatter: OK")
+print("simple-knn: OK")
+print("diff-gaussian-rasterization: OK")
+print("droid_backends: OK")
+print("lietorch: OK")
+PY
+
+ARG USERNAME=hislam2
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd --gid "${GID}" "${USERNAME}" \
+    && useradd \
+        --uid "${UID}" \
+        --gid "${GID}" \
+        --create-home \
+        --shell /bin/bash \
+        "${USERNAME}" \
+    && if getent group video >/dev/null; then usermod -aG video "${USERNAME}"; fi \
+    && if getent group render >/dev/null; then usermod -aG render "${USERNAME}"; fi \
+    && mkdir -p \
+        "/home/${USERNAME}/.cache/huggingface" \
+        "/home/${USERNAME}/.cache/torch" \
+    && chown -R \
+        "${USERNAME}:${USERNAME}" \
+        "/home/${USERNAME}" \
+        /workspace/HI-SLAM2
+
+USER ${USERNAME}
+
+ENV HOME=/home/hislam2
+ENV PATH=/home/hislam2/.local/bin:${PATH}
+ENV HF_HOME=/home/hislam2/.cache/huggingface
+ENV TORCH_HOME=/home/hislam2/.cache/torch
+ENV XDG_CACHE_HOME=/home/hislam2/.cache
 
 CMD ["/bin/bash"]
